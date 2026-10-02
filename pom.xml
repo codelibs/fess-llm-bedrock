@@ -1,0 +1,235 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<artifactId>fess-llm-bedrock</artifactId>
+	<packaging>jar</packaging>
+	<name>Amazon Bedrock LLM Plugin</name>
+	<version>15.9.0-SNAPSHOT</version>
+	<description>Amazon Bedrock support for Fess: the RAG chat LLM (Converse / ConverseStream) and the content-chunk embedding provider (Titan Text Embeddings V2, Cohere Embed v3/v4).</description>
+	<scm>
+		<connection>scm:git:git@github.com:codelibs/fess-llm-bedrock.git</connection>
+		<developerConnection>scm:git:git@github.com:codelibs/fess-llm-bedrock.git</developerConnection>
+		<url>https://github.com/codelibs/fess-llm-bedrock</url>
+		<tag>HEAD</tag>
+	</scm>
+	<parent>
+		<groupId>org.codelibs.fess</groupId>
+		<artifactId>fess-parent</artifactId>
+		<version>15.9.0-SNAPSHOT</version>
+		<relativePath />
+	</parent>
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<artifactId>maven-source-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<artifactId>maven-jar-plugin</artifactId>
+				<configuration>
+					<archive>
+						<manifestEntries>
+							<Fess-WebAppJar>true</Fess-WebAppJar>
+						</manifestEntries>
+					</archive>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-shade-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<createDependencyReducedPom>false</createDependencyReducedPom>
+							<!-- No relocation, the same as fess-storage-s3: both plugins shade the SDK at
+							     ${s3.version}, so a class that exists in both jars is the same class. -->
+							<artifactSet>
+								<!-- What the war already carries (httpclient5 5.6.1, httpcore5 5.4,
+								     httpcore5-h2 5.4, slf4j-api). Fess is declared first and provided, but
+								     Maven widens the scope of an artifact both Fess and the SDK need, so these
+								     would otherwise be shaded. WEB-INF/lib precedes WEB-INF/plugin on every
+								     class path Fess builds, so a shaded copy would never be read. -->
+								<excludes>
+									<exclude>org.apache.httpcomponents.client5:*</exclude>
+									<exclude>org.apache.httpcomponents.core5:*</exclude>
+									<exclude>org.slf4j:*</exclude>
+								</excludes>
+							</artifactSet>
+							<filters>
+								<filter>
+									<artifact>*:*</artifact>
+									<excludes>
+										<exclude>META-INF/*.SF</exclude>
+										<exclude>META-INF/*.DSA</exclude>
+										<exclude>META-INF/*.RSA</exclude>
+										<exclude>module-info.class</exclude>
+									</excludes>
+								</filter>
+							</filters>
+							<transformers>
+								<transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+							</transformers>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<artifactId>maven-javadoc-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>com.mycila</groupId>
+				<artifactId>license-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>net.revelc.code.formatter</groupId>
+				<artifactId>formatter-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+	<!-- Fess plugins are distributed through maven.codelibs.org instead of Maven Central.
+	     This cannot be inherited from fess-parent: distributionManagement is inherited
+	     unconditionally, so declaring it there would also redirect the SNAPSHOT
+	     deployments of fess-parent, fess, fess-crawler, fess-crawler-playwright and
+	     fess-suggest, which stay on Maven Central. The scpexe transport comes from
+	     the wagon-ssh-external build extension inherited from fess-parent. -->
+	<distributionManagement>
+		<repository>
+			<id>codelibs-repo</id>
+			<name>CodeLibs Repository</name>
+			<url>scpexe://maven.codelibs.org/var/www/maven/release</url>
+		</repository>
+		<snapshotRepository>
+			<id>codelibs-snapshots</id>
+			<name>CodeLibs Snapshot Repository</name>
+			<url>scpexe://maven.codelibs.org/var/www/maven/snapshot</url>
+		</snapshotRepository>
+	</distributionManagement>
+	<repositories>
+		<repository>
+			<id>snapshots.central.sonatype.com</id>
+			<url>https://central.sonatype.com/repository/maven-snapshots</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+	<dependencies>
+		<!-- Declared first, before the SDK, so that what Fess already ships arrives as provided
+		     transitive nodes and stays out of the shaded jar. -->
+		<dependency>
+			<groupId>org.codelibs.fess</groupId>
+			<artifactId>fess</artifactId>
+			<version>${fess.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>jakarta.annotation</groupId>
+			<artifactId>jakarta.annotation-api</artifactId>
+			<version>${jakarta.annotation.api.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>jakarta.servlet</groupId>
+			<artifactId>jakarta.servlet-api</artifactId>
+			<version>${jakarta.servlet.api.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<!-- The next four are compile-scoped in the sibling fess-llm-* poms. Here they must be
+		     provided: the war ships them, and anything not provided is copied into the shaded jar. -->
+		<dependency>
+			<groupId>org.codelibs</groupId>
+			<artifactId>corelib</artifactId>
+			<version>${corelib.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.lastaflute</groupId>
+			<artifactId>lastaflute</artifactId>
+			<version>${lastaflute.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.dbflute</groupId>
+			<artifactId>dbflute-runtime</artifactId>
+			<version>${dbflute.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>${slf4j.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.opensearch</groupId>
+			<artifactId>opensearch</artifactId>
+			<version>${opensearch.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<!-- AWS SDK for Java 2.x, used only for credentials (DefaultCredentialsProvider) and SigV4
+		     signing (AwsV4HttpSigner); http-auth-aws also brings software.amazon.eventstream, the
+		     decoder for ConverseStream. sts serves web-identity (IRSA / EKS Pod Identity)
+		     credentials and apache5-client is the HTTP client STS uses. Requests to Bedrock itself
+		     go through the war's HttpClient 5. -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>auth</artifactId>
+			<version>${s3.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>http-auth-aws</artifactId>
+			<version>${s3.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>sts</artifactId>
+			<version>${s3.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>software.amazon.awssdk</groupId>
+					<artifactId>netty-nio-client</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>apache5-client</artifactId>
+			<version>${s3.version}</version>
+		</dependency>
+		<!-- Test only, never shaded: the official Bedrock Runtime client is the reference the SigV4
+		     signature of BedrockAuth is compared with (BedrockAuthOfficialClientTest). -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>bedrockruntime</artifactId>
+			<version>${s3.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.squareup.okhttp3</groupId>
+			<artifactId>mockwebserver</artifactId>
+			<version>${okhttp.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>${junit.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.dbflute.utflute</groupId>
+			<artifactId>utflute-lastaflute</artifactId>
+			<version>${utflute.version}</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+</project>
