@@ -23,6 +23,7 @@ import org.codelibs.fess.bedrock.EventStreamFrames;
 import org.codelibs.fess.llm.LlmChatRequest;
 import org.codelibs.fess.llm.LlmException;
 import org.codelibs.fess.llm.LlmStreamCallback;
+import org.codelibs.fess.llm.LlmUsage;
 import org.codelibs.fess.unit.LogCapturingAppender;
 import org.codelibs.fess.unit.UnitFessTestCase;
 import org.junit.jupiter.api.Test;
@@ -69,11 +70,20 @@ public class BedrockLlmClientStreamTest extends UnitFessTestCase {
         final List<Boolean> dones = new ArrayList<>();
         final List<Throwable> errors = new ArrayList<>();
         final List<Integer> retries = new ArrayList<>();
+        final List<LlmUsage> usages = new ArrayList<>();
+        final List<String> events = new ArrayList<>();
 
         @Override
         public void onChunk(final String chunk, final boolean done) {
             chunks.add(chunk);
             dones.add(done);
+            events.add("chunk");
+        }
+
+        @Override
+        public void onUsage(final LlmUsage usage) {
+            usages.add(usage);
+            events.add("usage");
         }
 
         @Override
@@ -100,6 +110,7 @@ public class BedrockLlmClientStreamTest extends UnitFessTestCase {
             assertEquals("onError must be called exactly once, before the rethrow", 1, recorder.errors.size());
             assertSame(e, recorder.errors.get(0));
             assertFalse("no terminal chunk after a failure", recorder.dones.contains(Boolean.TRUE));
+            assertTrue("a call that did not finish has no totals to report", recorder.usages.isEmpty());
             return e;
         }
     }
@@ -121,6 +132,29 @@ public class BedrockLlmClientStreamTest extends UnitFessTestCase {
         assertTrue(completed, completed.contains("inputTokens=11"));
         assertTrue(completed, completed.contains("outputTokens=7"));
         assertTrue(completed, completed.contains("totalTokens=18"));
+    }
+
+    @Test
+    public void test_streamChat_reportsUsageOnceAfterTheTerminalChunk() {
+        mockServer.enqueue(eventStream(new EventStreamFrames().start().text("Hello").stop("end_turn")));
+        final Recorder recorder = new Recorder();
+        client.streamChat(new LlmChatRequest().addUserMessage("Hi"), recorder);
+        assertEquals(List.of(new LlmUsage(11, 7, 18, "us.amazon.nova-2-lite-v1:0")), recorder.usages);
+        // The totals belong to the finished call: they arrive after the terminal chunk, not before.
+        assertEquals(List.of("chunk", "chunk", "usage"), recorder.events);
+    }
+
+    @Test
+    public void test_streamChat_reportsModelWithoutMetadata() {
+        // As chat() does, the call is attributed to the requested model; counts Bedrock did not send
+        // stay unknown (null), not zero.
+        mockServer.enqueue(eventStream(new EventStreamFrames().start()
+                .text("Hello")
+                .event("contentBlockStop", "{\"contentBlockIndex\":0}")
+                .event("messageStop", "{\"stopReason\":\"end_turn\"}")));
+        final Recorder recorder = new Recorder();
+        client.streamChat(new LlmChatRequest().addUserMessage("Hi"), recorder);
+        assertEquals(List.of(new LlmUsage(null, null, null, "us.amazon.nova-2-lite-v1:0")), recorder.usages);
     }
 
     @Test

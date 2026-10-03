@@ -45,6 +45,7 @@ import org.codelibs.fess.llm.LlmChatResponse;
 import org.codelibs.fess.llm.LlmException;
 import org.codelibs.fess.llm.LlmMessage;
 import org.codelibs.fess.llm.LlmStreamCallback;
+import org.codelibs.fess.llm.LlmUsage;
 import org.codelibs.fess.util.ComponentUtil;
 import org.codelibs.fess.util.CredentialUrlUtil;
 
@@ -561,7 +562,8 @@ public class BedrockLlmClient extends AbstractLlmClient {
     /**
      * Reads a ConverseStream body and forwards its text to {@code callback}. Text deltas become
      * {@code onChunk(text, false)}; reasoning deltas are counted and dropped; {@code messageStop}
-     * records the stop reason and {@code metadata} the token usage. An {@code exception} or
+     * records the stop reason and {@code metadata} the token usage, reported through
+     * {@link LlmStreamCallback#onUsage(LlmUsage)} after the terminal chunk. An {@code exception} or
      * {@code error} frame - which Bedrock can send after HTTP 200 - fails the call, and so does a
      * body that ends without {@code messageStop}. Only after a complete stream is
      * {@code onChunk("", true)} sent.
@@ -670,6 +672,9 @@ public class BedrockLlmClient extends AbstractLlmClient {
                     outputTokens, chunkCount, model);
         }
         callback.onChunk("", true);
+        // The metadata event carries the totals of the whole call; without this the caller would count the
+        // call but none of its tokens (the synchronous chat() reports them through its response).
+        callback.onUsage(new LlmUsage(inputTokens, outputTokens, totalTokens, model));
     }
 
     /**
