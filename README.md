@@ -2,6 +2,12 @@ Amazon Bedrock LLM Plugin for Fess
 [![Java CI with Maven](https://github.com/codelibs/fess-llm-bedrock/actions/workflows/maven.yml/badge.svg)](https://github.com/codelibs/fess-llm-bedrock/actions/workflows/maven.yml)
 ==================================
 
+> [!NOTE]
+> **Experimental.** This plugin debuts in Fess 15.9 as an experimental release. It has not yet been
+> tested across a wide range of environments, so configuration keys and behavior may change in
+> upcoming releases. Feedback from real-world use will drive its improvements - please share your
+> experience in [GitHub Issues](https://github.com/codelibs/fess-llm-bedrock/issues).
+
 ## Overview
 
 This plugin makes [Amazon Bedrock](https://aws.amazon.com/bedrock/) usable from [Fess](https://github.com/codelibs/fess):
