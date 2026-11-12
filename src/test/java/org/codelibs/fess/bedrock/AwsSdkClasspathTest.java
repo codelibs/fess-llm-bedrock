@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.http.auth.aws.signer.AwsV4HttpSigner;
-import software.amazon.eventstream.MessageDecoder;
+import software.amazon.awssdk.eventstream.MessageDecoder;
 
 /**
  * Pins the three SDK entry points this plugin is built on, so a dependency change that drops one

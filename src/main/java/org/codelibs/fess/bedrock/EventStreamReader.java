@@ -20,9 +20,9 @@ import java.io.InputStream;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-import software.amazon.eventstream.HeaderValue;
-import software.amazon.eventstream.Message;
-import software.amazon.eventstream.MessageDecoder;
+import software.amazon.awssdk.eventstream.HeaderValue;
+import software.amazon.awssdk.eventstream.Message;
+import software.amazon.awssdk.eventstream.MessageDecoder;
 
 /**
  * Reads {@code application/vnd.amazon.eventstream} frames from an {@link InputStream}, the

@@ -20,8 +20,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import software.amazon.eventstream.HeaderValue;
-import software.amazon.eventstream.Message;
+import software.amazon.awssdk.eventstream.HeaderValue;
+import software.amazon.awssdk.eventstream.Message;
 
 /**
  * Builds {@code application/vnd.amazon.eventstream} bodies for tests with AWS's own encoder, so a
