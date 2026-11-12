@@ -25,7 +25,7 @@ import java.util.List;
 import org.codelibs.fess.unit.UnitFessTestCase;
 import org.junit.jupiter.api.Test;
 
-import software.amazon.eventstream.Message;
+import software.amazon.awssdk.eventstream.Message;
 
 public class EventStreamReaderTest extends UnitFessTestCase {
 
@@ -80,7 +80,7 @@ public class EventStreamReaderTest extends UnitFessTestCase {
     @Test
     public void test_header_absentOrNonString() {
         final Message message =
-                new Message(java.util.Map.of(":flag", software.amazon.eventstream.HeaderValue.fromBoolean(true)), new byte[0]);
+                new Message(java.util.Map.of(":flag", software.amazon.awssdk.eventstream.HeaderValue.fromBoolean(true)), new byte[0]);
         assertNull(EventStreamReader.header(message, ":event-type"));
         assertNull(EventStreamReader.header(message, ":flag"));
     }

@@ -175,7 +175,7 @@
 			<scope>provided</scope>
 		</dependency>
 		<!-- AWS SDK for Java 2.x, used only for credentials (DefaultCredentialsProvider) and SigV4
-		     signing (AwsV4HttpSigner); http-auth-aws also brings software.amazon.eventstream, the
+		     signing (AwsV4HttpSigner); http-auth-aws also brings software.amazon.awssdk.eventstream, the
 		     decoder for ConverseStream. sts serves web-identity (IRSA / EKS Pod Identity)
 		     credentials and apache5-client is the HTTP client STS uses. Requests to Bedrock itself
 		     go through the war's HttpClient 5. -->

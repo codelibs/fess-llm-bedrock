@@ -49,7 +49,7 @@ import org.codelibs.fess.llm.LlmUsage;
 import org.codelibs.fess.util.ComponentUtil;
 import org.codelibs.fess.util.CredentialUrlUtil;
 
-import software.amazon.eventstream.Message;
+import software.amazon.awssdk.eventstream.Message;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 
